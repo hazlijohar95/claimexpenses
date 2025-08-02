@@ -2,6 +2,7 @@
   "name": "claim-expenses",
   "version": "1.0.0",
   "private": true,
+  "homepage": ".",
   "description": "A modern expense claim management system built with React and Supabase",
   "keywords": [
     "expense",
