@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { 
   Home, 
   FileText, 
@@ -7,7 +8,8 @@ import {
   CheckCircle, 
   User,
   Menu,
-  X
+  X,
+  LogOut
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -16,6 +18,7 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
+  const { user, signOut } = useAuth();
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
 
   const navigation = [
@@ -119,9 +122,17 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
 
           <div className="flex items-center space-x-4">
-            <button className="flex items-center space-x-2 text-gray-600 hover:text-gray-900">
+            <div className="flex items-center space-x-2 text-gray-600">
               <User size={20} />
-              <span className="hidden sm:block">John Doe</span>
+              <span className="hidden sm:block">{user?.full_name || 'User'}</span>
+            </div>
+            <button
+              onClick={signOut}
+              className="flex items-center space-x-2 text-gray-600 hover:text-gray-900"
+              title="Sign out"
+            >
+              <LogOut size={20} />
+              <span className="hidden sm:block">Sign out</span>
             </button>
           </div>
         </div>
