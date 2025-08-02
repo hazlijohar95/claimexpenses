@@ -1,17 +1,23 @@
-import React from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { 
-  ArrowLeft, 
-  Clock, 
-  CheckCircle, 
-  XCircle,
-  FileText,
-  DollarSign,
+import React, { useState, useEffect, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { ClaimsService } from '../services/claimsService';
+import {
+  ArrowLeft,
   Calendar,
-  User,
-  MessageSquare,
+  DollarSign,
+  Tag,
+  FileText,
   Download,
-  Eye
+  Eye,
+  CheckCircle,
+  XCircle,
+  Clock,
+  MessageSquare,
+  Edit,
+  Trash2,
+  MoreHorizontal,
+  Sparkles,
 } from 'lucide-react';
 
 interface ExpenseItem {
@@ -22,209 +28,353 @@ interface ExpenseItem {
   date: string;
 }
 
+interface Attachment {
+  id: string;
+  file_name: string;
+  file_size: number;
+  file_type: string;
+  uploaded_at: string;
+  url?: string;
+}
+
 interface Claim {
   id: string;
   title: string;
   description: string;
   amount: number;
   status: 'pending' | 'approved' | 'rejected';
-  date: string;
   category: string;
-  submittedBy: string;
-  submittedDate: string;
-  approvedBy?: string;
-  approvedDate?: string;
-  rejectionReason?: string;
-  expenseItems: ExpenseItem[];
-  attachments: string[];
+  priority: string;
+  submitted_date: string;
+  submitted_by: string;
+  submitted_by_name?: string;
+  expense_items?: ExpenseItem[];
+  attachments?: Attachment[];
 }
 
 const ClaimDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { user: _user } = useAuth();
+  const [claim, setClaim] = useState<Claim | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  // Mock data - in a real app, this would come from an API
-  const claim: Claim = {
-    id: id || 'CLM-001',
-    title: 'Business Travel - Conference',
-    description: 'Conference registration and travel expenses for Tech Summit 2024. This includes airfare, hotel accommodation, and conference registration fees.',
-    amount: 450,
-    status: 'approved',
-    date: '2024-01-15',
-    category: 'Travel',
-    submittedBy: 'John Doe',
-    submittedDate: '2024-01-15T10:30:00Z',
-    approvedBy: 'Jane Smith',
-    approvedDate: '2024-01-16T14:20:00Z',
-    expenseItems: [
-      {
-        id: '1',
-        description: 'Conference Registration',
-        amount: 250,
-        category: 'Training & Education',
-        date: '2024-01-15'
-      },
-      {
-        id: '2',
-        description: 'Airfare - Round Trip',
-        amount: 150,
-        category: 'Travel',
-        date: '2024-01-15'
-      },
-      {
-        id: '3',
-        description: 'Hotel Accommodation',
-        amount: 50,
-        category: 'Accommodation',
-        date: '2024-01-15'
+  useEffect(() => {
+    if (id) {
+      fetchClaimDetails();
+    }
+  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const fetchClaimDetails = useCallback(async () => {
+    try {
+      setLoading(true);
+      const claimData = await ClaimsService.getClaimById(id!);
+      if (claimData) {
+        setClaim({
+          ...claimData,
+          priority: claimData.priority || 'medium'
+        } as unknown as Claim);
       }
-    ],
-    attachments: [
-      'conference_receipt.pdf',
-      'airfare_ticket.pdf',
-      'hotel_invoice.pdf'
-    ]
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch claim details');
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'approved':
+        return <CheckCircle className="w-5 h-5 text-green-600" />;
+      case 'rejected':
+        return <XCircle className="w-5 h-5 text-red-600" />;
+      default:
+        return <Clock className="w-5 h-5 text-yellow-600" />;
+    }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'approved':
         return 'bg-green-100 text-green-800';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
       case 'rejected':
         return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-yellow-100 text-yellow-800';
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'urgent':
+        return 'bg-red-100 text-red-800';
+      case 'high':
+        return 'bg-orange-100 text-orange-800';
+      case 'normal':
+        return 'bg-blue-100 text-blue-800';
+      case 'low':
+        return 'bg-gray-100 text-gray-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return <CheckCircle size={20} className="text-green-600" />;
-      case 'pending':
-        return <Clock size={20} className="text-yellow-600" />;
-      case 'rejected':
-        return <XCircle size={20} className="text-red-600" />;
-      default:
-        return null;
-    }
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount);
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return 'Approved';
-      case 'pending':
-        return 'Pending Approval';
-      case 'rejected':
-        return 'Rejected';
-      default:
-        return 'Unknown';
-    }
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
   };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="card">
+          <div className="loading-skeleton h-8 w-64 mb-4"></div>
+          <div className="loading-skeleton h-4 w-full mb-2"></div>
+          <div className="loading-skeleton h-4 w-3/4"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !claim) {
+    return (
+      <div className="space-y-6">
+        <div className="card">
+          <div className="text-center py-12">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <XCircle className="w-8 h-8 text-red-600" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Claim</h3>
+            <p className="text-gray-600 mb-4">{error || 'Claim not found'}</p>
+            <button
+              onClick={() => navigate('/claims')}
+              className="btn-primary"
+            >
+              Back to Claims
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <Link
-            to="/claims"
-            className="text-gray-400 hover:text-gray-600"
+          <button
+            onClick={() => navigate(-1)}
+            className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
           >
-            <ArrowLeft size={24} />
-          </Link>
+            <ArrowLeft className="w-5 h-5 text-gray-600" />
+          </button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Claim Details</h1>
-            <p className="text-gray-600">View detailed information about your expense claim</p>
+            <h1 className="heading-1">{claim.title}</h1>
+            <p className="body-medium text-gray-600">
+              Claim submitted on {formatDate(claim.submitted_date)}
+            </p>
           </div>
         </div>
-        
+
         <div className="flex items-center space-x-3">
-          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(claim.status)}`}>
-            {getStatusIcon(claim.status)}
-            <span className="ml-1">{getStatusText(claim.status)}</span>
-          </span>
+          {claim.status === 'pending' && (
+            <>
+              <button className="btn-secondary flex items-center space-x-2">
+                <Edit className="w-4 h-4" />
+                <span>Edit</span>
+              </button>
+              <button className="btn-ghost flex items-center space-x-2 text-red-600 hover:text-red-700 hover:bg-red-50">
+                <Trash2 className="w-4 h-4" />
+                <span>Delete</span>
+              </button>
+            </>
+          )}
+          <button className="btn-ghost flex items-center space-x-2">
+            <MoreHorizontal className="w-4 h-4" />
+            <span>More</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Status Banner */}
+      <div className={`p-4 rounded-lg border ${
+        claim.status === 'approved' ? 'bg-green-50 border-green-200' :
+        claim.status === 'rejected' ? 'bg-red-50 border-red-200' :
+        'bg-yellow-50 border-yellow-200'
+      }`}>
+        <div className="flex items-center space-x-3">
+          {getStatusIcon(claim.status)}
+          <div>
+            <h3 className="font-medium text-gray-900 capitalize">
+              Status: {claim.status}
+            </h3>
+            <p className="text-sm text-gray-600">
+              {claim.status === 'pending' && 'Your claim is under review'}
+              {claim.status === 'approved' && 'Your claim has been approved'}
+              {claim.status === 'rejected' && 'Your claim has been rejected'}
+            </p>
+          </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Basic Information */}
+          {/* Claim Details */}
           <div className="card">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">Claim Information</h2>
-            <div className="space-y-4">
+            <div className="mb-6">
+              <h2 className="heading-3 mb-2">Claim Details</h2>
+              <p className="body-small text-gray-600">
+                Basic information about this expense claim
+              </p>
+            </div>
+
+            <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Claim Title</label>
-                <p className="mt-1 text-sm text-gray-900">{claim.title}</p>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Description</label>
-                <p className="mt-1 text-sm text-gray-900">{claim.description}</p>
+                <h3 className="font-medium text-gray-900 mb-2">Description</h3>
+                <p className="text-gray-700 leading-relaxed">{claim.description}</p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Category</label>
-                  <p className="mt-1 text-sm text-gray-900">{claim.category}</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <Tag className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Category</p>
+                    <p className="font-medium text-gray-900 capitalize">
+                      {claim.category.replace('_', ' ')}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Claim Date</label>
-                  <p className="mt-1 text-sm text-gray-900">{new Date(claim.date).toLocaleDateString()}</p>
+
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                    <Sparkles className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Priority</p>
+                    <span className={`badge ${getPriorityColor(claim.priority)}`}>
+                      {claim.priority}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                    <DollarSign className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Total Amount</p>
+                    <p className="font-medium text-gray-900">{formatCurrency(claim.amount)}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                    <Calendar className="w-5 h-5 text-gray-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Submitted Date</p>
+                    <p className="font-medium text-gray-900">{formatDate(claim.submitted_date)}</p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Expense Items */}
-          <div className="card">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">Expense Items</h2>
-            <div className="space-y-4">
-              {claim.expenseItems.map((item, index) => (
-                <div key={item.id} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-sm font-medium text-gray-900">{item.description}</h4>
-                    <span className="text-sm font-medium text-gray-900">${item.amount}</span>
+          {claim.expense_items && claim.expense_items.length > 0 && (
+            <div className="card">
+              <div className="mb-6">
+                <h2 className="heading-3 mb-2">Expense Items</h2>
+                <p className="body-small text-gray-600">
+                  Individual expenses included in this claim
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                {claim.expense_items.map((item, index) => (
+                  <div key={item.id} className="p-4 border border-gray-200 rounded-lg">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-medium text-gray-900">
+                        Item {index + 1}: {item.description}
+                      </h3>
+                      <span className="font-medium text-gray-900">
+                        {formatCurrency(item.amount)}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-gray-600">Category:</span>
+                        <span className="ml-2 text-gray-900 capitalize">
+                          {item.category.replace('_', ' ')}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">Date:</span>
+                        <span className="ml-2 text-gray-900">
+                          {formatDate(item.date)}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center space-x-4 text-xs text-gray-500">
-                    <span className="flex items-center">
-                      <Calendar size={12} className="mr-1" />
-                      {new Date(item.date).toLocaleDateString()}
-                    </span>
-                    <span>{item.category}</span>
-                  </div>
-                </div>
-              ))}
-              
-              <div className="border-t border-gray-200 pt-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-lg font-medium text-gray-900">Total Amount</span>
-                  <span className="text-2xl font-bold text-primary-600">${claim.amount}</span>
-                </div>
+                ))}
               </div>
             </div>
-          </div>
+          )}
 
           {/* Attachments */}
-          {claim.attachments.length > 0 && (
+          {claim.attachments && claim.attachments.length > 0 && (
             <div className="card">
-              <h2 className="text-lg font-medium text-gray-900 mb-4">Attachments</h2>
+              <div className="mb-6">
+                <h2 className="heading-3 mb-2">Attachments</h2>
+                <p className="body-small text-gray-600">
+                  Receipts and supporting documents
+                </p>
+              </div>
+
               <div className="space-y-3">
-                {claim.attachments.map((attachment, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                {claim.attachments.map((attachment) => (
+                  <div key={attachment.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
                     <div className="flex items-center space-x-3">
-                      <FileText className="h-5 w-5 text-gray-400" />
-                      <span className="text-sm font-medium text-gray-900">{attachment}</span>
+                      <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                        <FileText className="w-5 h-5 text-gray-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">{attachment.file_name}</p>
+                        <p className="text-sm text-gray-600">
+                          {formatFileSize(attachment.file_size)} • {attachment.file_type}
+                        </p>
+                      </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <button className="text-primary-600 hover:text-primary-700">
-                        <Eye size={16} />
+                      <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                        <Eye className="w-4 h-4" />
                       </button>
-                      <button className="text-gray-600 hover:text-gray-700">
-                        <Download size={16} />
+                      <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                        <Download className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
@@ -236,86 +386,73 @@ const ClaimDetails: React.FC = () => {
 
         {/* Sidebar */}
         <div className="space-y-6">
-          {/* Status Timeline */}
-          <div className="card">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">Status Timeline</h2>
-            <div className="space-y-4">
-              <div className="flex items-start space-x-3">
-                <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                    <CheckCircle size={16} className="text-green-600" />
-                  </div>
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">Claim Approved</p>
-                  <p className="text-xs text-gray-500">
-                    {claim.approvedBy} • {claim.approvedDate ? new Date(claim.approvedDate).toLocaleDateString() : ''}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start space-x-3">
-                <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                    <FileText size={16} className="text-blue-600" />
-                  </div>
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">Claim Submitted</p>
-                  <p className="text-xs text-gray-500">
-                    {claim.submittedBy} • {new Date(claim.submittedDate).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="card">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h2>
-            <div className="space-y-3">
-              <button className="w-full btn-secondary flex items-center justify-center space-x-2">
-                <MessageSquare size={16} />
-                <span>Add Comment</span>
-              </button>
-              
-              <button className="w-full btn-secondary flex items-center justify-center space-x-2">
-                <Download size={16} />
-                <span>Download PDF</span>
-              </button>
-            </div>
-          </div>
-
           {/* Claim Summary */}
           <div className="card">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">Claim Summary</h2>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Claim ID</span>
-                <span className="text-sm font-medium text-gray-900">{claim.id}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Submitted By</span>
-                <span className="text-sm font-medium text-gray-900">{claim.submittedBy}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Submitted Date</span>
-                <span className="text-sm font-medium text-gray-900">
-                  {new Date(claim.submittedDate).toLocaleDateString()}
+            <h3 className="heading-4 mb-4">Claim Summary</h3>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600">Status</span>
+                <span className={`badge ${getStatusColor(claim.status)}`}>
+                  {claim.status}
                 </span>
               </div>
-              {claim.approvedBy && (
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Approved By</span>
-                  <span className="text-sm font-medium text-gray-900">{claim.approvedBy}</span>
-                </div>
-              )}
-              {claim.rejectionReason && (
-                <div className="pt-3 border-t border-gray-200">
-                  <span className="text-sm text-gray-600">Rejection Reason</span>
-                  <p className="text-sm text-gray-900 mt-1">{claim.rejectionReason}</p>
-                </div>
-              )}
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600">Priority</span>
+                <span className={`badge ${getPriorityColor(claim.priority)}`}>
+                  {claim.priority}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600">Total Amount</span>
+                <span className="font-medium text-gray-900">{formatCurrency(claim.amount)}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600">Items</span>
+                <span className="font-medium text-gray-900">
+                  {claim.expense_items?.length || 0}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600">Attachments</span>
+                <span className="font-medium text-gray-900">
+                  {claim.attachments?.length || 0}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Submitted By */}
+          <div className="card">
+            <h3 className="heading-4 mb-4">Submitted By</h3>
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center">
+                <span className="text-white font-semibold text-sm">
+                  {claim.submitted_by_name?.charAt(0) || 'U'}
+                </span>
+              </div>
+              <div>
+                <p className="font-medium text-gray-900">
+                  {claim.submitted_by_name || 'Unknown User'}
+                </p>
+                <p className="text-sm text-gray-600">
+                  {formatDate(claim.submitted_date)}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="card">
+            <h3 className="heading-4 mb-4">Actions</h3>
+            <div className="space-y-3">
+              <button className="btn-primary w-full flex items-center justify-center space-x-2">
+                <MessageSquare className="w-4 h-4" />
+                <span>Add Comment</span>
+              </button>
+              <button className="btn-secondary w-full flex items-center justify-center space-x-2">
+                <Download className="w-4 h-4" />
+                <span>Export PDF</span>
+              </button>
             </div>
           </div>
         </div>

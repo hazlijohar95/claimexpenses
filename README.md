@@ -4,7 +4,7 @@ A modern, full-stack expense claim management application built with React, Type
 
 ## Features
 
-- **User Authentication** - Secure login/signup with role-based access
+- **User Authentication** - Secure login/signup with role-based access and magic link authentication via Resend
 - **Dashboard** - Overview with statistics and recent activity
 - **Claim Submission** - Multi-item expense forms with file uploads
 - **Claims Management** - Search, filter, and sort claims
@@ -12,12 +12,14 @@ A modern, full-stack expense claim management application built with React, Type
 - **Real-time Updates** - Live status tracking and notifications
 - **File Management** - Receipt upload and storage
 - **Responsive Design** - Works on desktop, tablet, and mobile
+- **Email Integration** - Professional email templates for authentication and notifications
 
 ## Tech Stack
 
 - **Frontend**: React 18 with TypeScript
 - **Styling**: Tailwind CSS with custom components
 - **Backend**: Supabase (PostgreSQL + Auth + Storage)
+- **Email Service**: Resend.com for magic link authentication
 - **Routing**: React Router v7
 - **Icons**: Lucide React
 - **State Management**: React Context API
@@ -48,14 +50,21 @@ Create a `.env` file in the root directory:
 ```env
 REACT_APP_SUPABASE_URL=https://dhhsmadffhlztiofrvjf.supabase.co
 REACT_APP_SUPABASE_ANON_KEY=your_supabase_anon_key_here
+REACT_APP_RESEND_API_KEY=your_resend_api_key_here
 ```
 
-4. **Set up the database**
+4. **Set up Resend for email authentication**
+- Create a Resend.com account
+- Add and verify your domain
+- Get your API key
+- See `RESEND_SETUP.md` for detailed instructions
+
+5. **Set up the database**
 - Go to your Supabase project dashboard
 - Navigate to the SQL Editor
 - Run the SQL commands from `database/schema.sql`
 
-5. **Start the development server**
+6. **Start the development server**
 ```bash
 npm start
 ```
@@ -79,11 +88,18 @@ The application uses the following main tables:
 
 ## API Integration
 
-The app integrates with Supabase for:
+The app integrates with:
+
+### Supabase
 - **Authentication** - User signup, login, and session management
 - **Database** - PostgreSQL with Row Level Security (RLS)
 - **Storage** - File uploads for receipts and attachments
 - **Real-time** - Live updates for claim status changes
+
+### Resend
+- **Magic Link Authentication** - Passwordless email-based authentication
+- **Email Templates** - Professional branded emails for users
+- **Email Delivery** - Reliable email delivery with analytics
 
 ## Project Structure
 

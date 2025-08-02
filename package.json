@@ -1,24 +1,35 @@
 {
   "name": "claim-expenses",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
+  "description": "A modern expense claim management system built with React and Supabase",
+  "keywords": [
+    "expense",
+    "claims",
+    "management",
+    "react",
+    "supabase",
+    "typescript"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
   "dependencies": {
     "@supabase/supabase-js": "^2.53.0",
     "@tailwindcss/forms": "^0.5.10",
+    "@tailwindcss/typography": "^0.5.16",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.6.4",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^13.5.0",
     "@types/jest": "^27.5.2",
     "@types/node": "^16.18.126",
-    "@types/react": "^19.1.9",
-    "@types/react-dom": "^19.1.7",
     "@types/react-router-dom": "^5.3.3",
     "lucide-react": "^0.536.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.7.1",
     "react-scripts": "5.0.1",
+    "resend": "^4.7.0",
     "typescript": "^4.9.5",
     "web-vitals": "^2.1.4"
   },
@@ -26,13 +37,26 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "lint": "eslint src --ext .ts,.tsx",
+    "lint:fix": "eslint src --ext .ts,.tsx --fix",
+    "type-check": "tsc --noEmit",
+    "format": "prettier --write src/**/*.{ts,tsx,js,jsx,json,css,md}",
+    "format:check": "prettier --check src/**/*.{ts,tsx,js,jsx,json,css,md}",
+    "prebuild": "npm run type-check && npm run lint",
+    "prestart": "echo 'Starting app without type checking'"
   },
   "eslintConfig": {
     "extends": [
       "react-app",
       "react-app/jest"
-    ]
+    ],
+    "rules": {
+      "@typescript-eslint/no-unused-vars": "error",
+      "@typescript-eslint/explicit-function-return-type": "off",
+      "@typescript-eslint/explicit-module-boundary-types": "off",
+      "react-hooks/exhaustive-deps": "warn"
+    }
   },
   "browserslist": {
     "production": [
@@ -47,8 +71,23 @@
     ]
   },
   "devDependencies": {
+    "@types/react": "^19.1.9",
+    "@types/react-dom": "^19.1.7",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
     "autoprefixer": "^10.4.21",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.0",
     "postcss": "^8.5.6",
-    "tailwindcss": "^4.1.11"
+    "prettier": "^3.0.0",
+    "tailwindcss": "^3.4.17"
+  },
+  "overrides": {
+    "nth-check": "^2.0.1"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
   }
 }
