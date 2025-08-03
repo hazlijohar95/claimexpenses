@@ -1,7 +1,9 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { AuthService } from '../services/authService';
 import type { AuthUser } from '../types';
 import { logger } from '../lib/supabase';
+import { DEMO_MODE, ENV } from '../utils/constants';
+import { rateLimiter } from '../utils/security';
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -39,13 +41,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Check for existing session
     const checkUser = async () => {
       try {
-        // Check if environment variables are available
-        const supabaseUrl = process.env['REACT_APP_SUPABASE_URL'];
-        const supabaseKey = process.env['REACT_APP_SUPABASE_ANON_KEY'];
-        
-        if (!supabaseUrl || !supabaseKey) {
-          logger.error('Missing Supabase environment variables');
-          setError('Configuration error: Missing Supabase credentials');
+        // Check if we're in demo mode
+        if (DEMO_MODE.isActive) {
+          logger.info('🔧 Development Mode: Using demo data (no real Supabase connection). This is expected in development.');
+          // In demo mode, we'll show a demo user
+          if (ENV.isDevelopment) {
+            setUser(DEMO_MODE.demoUser);
+          } else {
+            setError('Configuration error: Missing Supabase credentials. Please check your environment variables.');
+          }
           setLoading(false);
           return;
         }
@@ -93,12 +97,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setError(null);
   };
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = useCallback(async (email: string, password: string) => {
+    // Rate limiting: max 5 attempts per 15 minutes
+    if (!rateLimiter.isAllowed(`signin_${email}`, 5, 15 * 60 * 1000)) {
+      const error = 'Too many sign-in attempts. Please try again in 15 minutes.';
+      setError(error);
+      throw new Error(error);
+    }
+
     try {
       setError(null);
       const result = await AuthService.signIn({ email, password });
       if (result.success && result.data) {
         setUser(result.data);
+        // Clear rate limiting on successful login
+        rateLimiter.clear(`signin_${email}`);
       } else {
         throw new Error(result.error || 'Sign in failed');
       }
@@ -107,9 +120,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setError(error instanceof Error ? error.message : 'Sign in failed');
       throw error;
     }
-  };
+  }, []);
 
-  const signUp = async (email: string, password: string, fullName: string, role: 'employee' | 'manager' | 'admin' = 'employee', department?: string) => {
+  const signUp = useCallback(async (email: string, password: string, fullName: string, role: 'employee' | 'manager' | 'admin' = 'employee', department?: string) => {
+    // Rate limiting: max 3 sign-up attempts per hour
+    if (!rateLimiter.isAllowed(`signup_${email}`, 3, 60 * 60 * 1000)) {
+      const error = 'Too many sign-up attempts. Please try again later.';
+      setError(error);
+      throw new Error(error);
+    }
+
     try {
       setError(null);
       const result = await AuthService.signUp({ 
@@ -121,6 +141,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
       if (result.success && result.data) {
         setUser(result.data);
+        // Clear rate limiting on successful signup
+        rateLimiter.clear(`signup_${email}`);
       } else {
         throw new Error(result.error || 'Sign up failed');
       }
@@ -129,7 +151,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setError(error instanceof Error ? error.message : 'Sign up failed');
       throw error;
     }
-  };
+  }, []);
 
   const signOut = async () => {
     try {
@@ -165,10 +187,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const signInWithMagicLink = async (userData: any) => {
+  const signInWithMagicLink = async (_userData: any) => {
     try {
       setError(null);
-      const result = await AuthService.createOrGetUserProfile(userData);
+      // Handle auth callback from Supabase
+      const result = await AuthService.handleAuthCallback();
       if (result.success && result.data) {
         setUser(result.data);
       } else {
@@ -181,16 +204,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const sendMagicLink = async (email: string, fullName: string, role: string, department?: string) => {
+  const sendMagicLink = async (email: string, _fullName: string, _role: string, _department?: string) => {
     try {
       setError(null);
-      const { ResendService } = await import('../services/resendService');
-      await ResendService.sendMagicLinkEmail({
-        email,
-        fullName,
-        role,
-        ...(department && { department })
-      });
+      // Use Supabase's built-in magic link instead of custom implementation
+      const { error } = await AuthService.sendMagicLink(email);
+      if (error) {
+        throw new Error(error);
+      }
     } catch (error) {
       logger.error('Send magic link error:', error);
       setError(error instanceof Error ? error.message : 'Failed to send magic link');

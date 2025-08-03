@@ -16,10 +16,38 @@
   body {
     @apply bg-white text-gray-900;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    font-weight: 400;
   }
 
   * {
     @apply border-gray-200;
+  }
+
+  /* v0.dev inspired typography */
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    letter-spacing: -0.025em;
+  }
+
+  /* Improved spacing system */
+  .space-y-8 > * + * {
+    margin-top: 2rem;
+  }
+
+  .space-y-6 > * + * {
+    margin-top: 1.5rem;
+  }
+
+  .space-y-4 > * + * {
+    margin-top: 1rem;
+  }
+
+  .space-y-3 > * + * {
+    margin-top: 0.75rem;
+  }
+
+  .space-y-2 > * + * {
+    margin-top: 0.5rem;
   }
 }
 
@@ -39,11 +67,11 @@
 
   /* v0.dev inspired card styles */
   .card {
-    @apply bg-white rounded-xl border border-gray-200 p-6 shadow-sm;
+    @apply bg-white rounded-lg border border-gray-200 p-6;
   }
 
   .card-hover {
-    @apply bg-white rounded-xl border border-gray-200 p-6 shadow-sm transition-all duration-200 hover:shadow-md hover:border-gray-300;
+    @apply bg-white rounded-lg border border-gray-200 p-6 transition-all duration-200 hover:border-gray-300 hover:bg-gray-50;
   }
 
   /* v0.dev inspired input styles */
@@ -70,11 +98,11 @@
   }
 
   .sidebar-item {
-    @apply flex items-center space-x-3 px-3 py-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors duration-200 font-medium;
+    @apply flex items-center space-x-3 px-3 py-2.5 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-all duration-200 font-medium;
   }
 
   .sidebar-item-active {
-    @apply flex items-center space-x-3 px-3 py-2 rounded-lg text-gray-900 bg-gray-100 font-medium;
+    @apply flex items-center space-x-3 px-3 py-2.5 rounded-lg text-gray-900 bg-gray-100 font-medium;
   }
 
   /* v0.dev inspired badges */
@@ -107,38 +135,38 @@
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   }
 
-  /* v0.dev inspired spacing and layout */
+  /* v0.dev inspired containers */
   .container-v0 {
-    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+    @apply max-w-7xl mx-auto px-6;
   }
 
   .section-v0 {
-    @apply py-12;
+    @apply py-8;
   }
 
-  /* v0.dev inspired typography */
+  /* v0.dev inspired typography scale */
   .heading-1 {
-    @apply text-4xl font-bold text-gray-900 tracking-tight;
+    @apply text-3xl font-semibold text-gray-900 leading-tight;
   }
 
   .heading-2 {
-    @apply text-3xl font-semibold text-gray-900 tracking-tight;
+    @apply text-2xl font-semibold text-gray-900 leading-tight;
   }
 
   .heading-3 {
-    @apply text-2xl font-semibold text-gray-900 tracking-tight;
+    @apply text-xl font-semibold text-gray-900 leading-tight;
   }
 
   .heading-4 {
-    @apply text-xl font-semibold text-gray-900 tracking-tight;
+    @apply text-lg font-semibold text-gray-900 leading-tight;
   }
 
   .body-large {
-    @apply text-lg text-gray-700 leading-relaxed;
+    @apply text-lg text-gray-600 leading-relaxed;
   }
 
   .body-medium {
-    @apply text-base text-gray-700 leading-relaxed;
+    @apply text-base text-gray-600 leading-relaxed;
   }
 
   .body-small {
@@ -151,7 +179,7 @@
 
   /* v0.dev inspired animations */
   .fade-in {
-    animation: fadeIn 0.3s ease-in-out;
+    animation: fadeIn 0.3s ease-out;
   }
 
   .slide-up {
@@ -190,10 +218,69 @@
 
   /* v0.dev inspired dividers */
   .divider {
-    @apply border-t border-gray-200 my-6;
+    @apply border-t border-gray-200;
   }
 
   .divider-vertical {
-    @apply border-l border-gray-200 mx-6;
+    @apply border-l border-gray-200;
+  }
+
+  /* Refined spacing utilities */
+  .space-inset-1 {
+    padding: 0.25rem;
+  }
+
+  .space-inset-2 {
+    padding: 0.5rem;
+  }
+
+  .space-inset-3 {
+    padding: 0.75rem;
+  }
+
+  .space-inset-4 {
+    padding: 1rem;
+  }
+
+  .space-inset-5 {
+    padding: 1.25rem;
+  }
+
+  .space-inset-6 {
+    padding: 1.5rem;
+  }
+
+  /* Refined border radius */
+  .rounded-sm {
+    border-radius: 0.25rem;
+  }
+
+  .rounded-md {
+    border-radius: 0.375rem;
+  }
+
+  .rounded-lg {
+    border-radius: 0.5rem;
+  }
+
+  .rounded-xl {
+    border-radius: 0.75rem;
+  }
+
+  /* Refined shadows */
+  .shadow-xs {
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  }
+
+  .shadow-sm {
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  }
+
+  .shadow-md {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+
+  .shadow-lg {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   }
 }

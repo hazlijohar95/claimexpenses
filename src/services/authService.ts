@@ -7,6 +7,7 @@ import type {
   ApiResponse,
 } from '../types';
 import { validateEmail, validatePassword, storage } from '../utils';
+import { reportAuthError } from '../utils/errorHandler';
 
 export class AuthService {
   private static readonly STORAGE_KEY = 'auth_user';
@@ -20,6 +21,7 @@ export class AuthService {
       
       if (error) {
         logger.error('Failed to get current user', error);
+        reportAuthError(error, 'get_current_user');
         return {
           data: null,
           error: error.message,

@@ -1,9 +1,9 @@
 import React from 'react';
 
 const EnvironmentTest: React.FC = () => {
-  const supabaseUrl = process.env['REACT_APP_SUPABASE_URL'];
-  const supabaseKey = process.env['REACT_APP_SUPABASE_ANON_KEY'];
-  const resendKey = process.env['REACT_APP_RESEND_API_KEY'];
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const resendKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
 
   const hasSupabaseUrl = !!supabaseUrl;
   const hasSupabaseKey = !!supabaseKey;

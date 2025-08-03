@@ -1,4 +1,4 @@
-import type { ClaimStatus, UserRole } from '@/types';
+import type { ClaimStatus, UserRole } from '../types';
 import { logger } from '../lib/supabase';
 
 // Date utilities
@@ -305,7 +305,7 @@ export const measurePerformance = <T>(
   const result = fn();
   const end = performance.now();
   
-  if (process.env.NODE_ENV === 'development') {
+  if (process.env['NODE_ENV'] === 'development') {
     // eslint-disable-next-line no-console
   console.log(`${name} took ${(end - start).toFixed(2)}ms`);
   }

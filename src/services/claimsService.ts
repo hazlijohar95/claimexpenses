@@ -25,6 +25,12 @@ export interface ClaimWithDetails extends Claim {
 }
 
 export class ClaimsService {
+  // Check if we're in demo mode
+  private static isDemoMode(): boolean {
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    return !supabaseKey || supabaseKey.includes('placeholder') || supabaseKey === 'your_supabase_anon_key_here';
+  }
+
   // Get all claims with optional filters and pagination
   static async getClaims(filters?: {
     status?: string;
@@ -37,6 +43,16 @@ export class ClaimsService {
     limit?: number;
   }): Promise<{ data: ClaimWithDetails[]; count: number; totalPages: number }> {
     try {
+      // Return demo data in demo mode
+      if (this.isDemoMode()) {
+        const demoData: ClaimWithDetails[] = [];
+        return {
+          data: demoData,
+          count: 0,
+          totalPages: 0
+        };
+      }
+
       let query = supabase
         .from('claims')
         .select(`
@@ -103,6 +119,11 @@ export class ClaimsService {
   // Get claim by ID
   static async getClaimById(id: string): Promise<ClaimWithDetails | null> {
     try {
+      // Return null in demo mode (no specific claim data)
+      if (this.isDemoMode()) {
+        return null;
+      }
+
       const { data, error } = await supabase
         .from('claims')
         .select(`
@@ -351,6 +372,18 @@ export class ClaimsService {
     averageAmount: number;
   }> {
     try {
+      // Return demo data in demo mode
+      if (this.isDemoMode()) {
+        return {
+          total: 12,
+          pending: 3,
+          approved: 8,
+          rejected: 1,
+          totalAmount: 2450.75,
+          averageAmount: 204.23,
+        };
+      }
+
       let query = supabase.from('claims').select('status, amount');
 
       if (userId) {
